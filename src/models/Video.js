@@ -28,8 +28,8 @@ const VideoSchema = new Mongoose.Schema({
   },
   comments: [
     {
-      type: Array,
-      default: [],
+      type: Mongoose.Schema.Types.ObjectId,
+      ref: "comment",
     },
   ],
 });
