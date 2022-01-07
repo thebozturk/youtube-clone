@@ -22,4 +22,20 @@ router.delete("/:id/:video_path", Authenticate, (req, res) => {
   Controller.delete(req, res);
 });
 
+router.get("/video-like/:id", (req, res) => {
+  Controller.like(req, res);
+});
+
+router.get("/video-dislike/:id", (req, res) => {
+  Controller.dislike(req, res);
+});
+
+router.post("/video-comment/:id", Authenticate, (req, res) => {
+  Controller.comment(req, res);
+});
+
+router.post("/reply-comment/:id", Authenticate, (req, res) => {
+  Controller.replyComment(req, res);
+});
+
 module.exports = router;
