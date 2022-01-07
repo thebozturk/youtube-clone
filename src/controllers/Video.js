@@ -1,9 +1,8 @@
 const Video = require("../models/Video");
-const User = require("../models/User");
 const Comment = require("../models/Comment");
+const PlayList = require("../models/Playlist");
 const fs = require("fs");
 const { IncomingForm } = require("formidable");
-const { Mongoose } = require("mongoose");
 
 class VideoController {
   async upload(req, res) {
@@ -263,6 +262,36 @@ class VideoController {
           });
         }
       );
+    });
+  }
+
+  async GetVideo(req, res) {
+    const video_id = req.params?.id;
+
+    const data = await Video.findOne({ _id: video_id });
+
+    if (!data) {
+      return res.status(404).json({
+        msg: "Video not found",
+      });
+    }
+    return res.status(200).json({
+      msg: "Video found",
+      data,
+    });
+  }
+
+  async createPlayList(req, res) {
+    const token = req.token;
+    const name = req.params?.name;
+    const newPlayList = new PlayList({
+      owner: token._id,
+      playlistname: name,
+    });
+
+    const savedPlayList = await newPlayList.save();
+    return res.status(200).json({
+      msg: "Playlist created successfully",
     });
   }
 }
