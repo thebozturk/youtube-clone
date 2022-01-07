@@ -1,6 +1,9 @@
 const Video = require("../models/Video");
+const User = require("../models/User");
+const Comment = require("../models/Comment");
 const fs = require("fs");
 const { IncomingForm } = require("formidable");
+const { Mongoose } = require("mongoose");
 
 class VideoController {
   async upload(req, res) {
@@ -111,6 +114,155 @@ class VideoController {
       return res.status(200).json({
         msg: "Video deleted successfully",
       });
+    });
+  }
+
+  like(req, res) {
+    const video_id = req.params?.id;
+    Video.findOneAndUpdate(
+      { _id: video_id },
+      { $inc: { likes: 1 } },
+      (err, video) => {
+        if (err) {
+          return res.status(500).json({
+            msg: "Error liking video",
+            error: err,
+          });
+        }
+        if (!video) {
+          return res.status(404).json({
+            msg: "Video not found",
+          });
+        }
+        return res.status(200).json({
+          msg: "Video liked successfully",
+          video,
+        });
+      }
+    );
+  }
+  dislike(req, res) {
+    const video_id = req.params?.id;
+    Video.findOneAndUpdate(
+      { _id: video_id },
+      { $inc: { dislikes: 1 } },
+      (err, video) => {
+        if (err) {
+          return res.status(500).json({
+            msg: "Error disliking video",
+            error: err,
+          });
+        }
+        if (!video) {
+          return res.status(404).json({
+            msg: "Video not found",
+          });
+        }
+        return res.status(200).json({
+          msg: "Video disliked successfully",
+          video,
+        });
+      }
+    );
+  }
+
+  async comment(req, res) {
+    const token = req.token;
+    const video_id = req.params?.id;
+
+    const form = new IncomingForm();
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        return res.status(500).json({
+          msg: "Error commenting video",
+          error: err,
+        });
+      }
+      const comment = fields;
+      if (!comment) {
+        return res.status(400).json({
+          msg: "Comment is required",
+        });
+      }
+
+      const newComment = new Comment({
+        owner: token._id,
+        comment: fields.comment,
+      });
+      const savedComment = await newComment.save();
+      Video.findOneAndUpdate(
+        { _id: video_id },
+        { $push: { comments: savedComment } },
+        { new: true },
+        (err, video) => {
+          if (err) {
+            return res.status(500).json({
+              msg: "Error commenting video",
+              error: err,
+            });
+          }
+          if (!video) {
+            return res.status(404).json({
+              msg: "Video not found",
+            });
+          }
+          return res.status(200).json({
+            msg: "Comment added successfully",
+            video,
+          });
+        }
+      );
+    });
+  }
+
+  replyComment(req, res) {
+    const token = req.token;
+
+    const form = new IncomingForm();
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        return res.status(500).json({
+          msg: "Error replying comment",
+          error: err,
+        });
+      }
+      const comment_id = req.params?.id;
+
+      if (!comment_id) {
+        return res.status(400).json({
+          msg: "Comment id is required",
+        });
+      }
+
+      const newComment = new Comment({
+        owner: token._id,
+        comment: fields.comment,
+      });
+
+      const savedComment = await newComment.save();
+
+      Comment.findOneAndUpdate(
+        { _id: comment_id },
+        { $push: { replies: savedComment } },
+        { new: true },
+        (err, comment) => {
+          if (err) {
+            return res.status(500).json({
+              msg: "Error replying comment",
+              error: err,
+            });
+          }
+          if (!comment) {
+            return res.status(404).json({
+              msg: "Comment not found",
+            });
+          }
+          return res.status(200).json({
+            msg: "Comment replied successfully",
+            comment,
+          });
+        }
+      );
     });
   }
 }
